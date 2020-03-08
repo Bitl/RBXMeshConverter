@@ -1,11 +1,11 @@
 #include "FileMeshData.h"
-#include "tiny_obj_loader.h"
+#include "OBJ_Loader.h"
 
 #include <iostream>
 #include <fstream>
 
 using namespace RBX;
-using namespace tinyobj;
+using namespace objl;
 
 int main(int argc, char* argv[])
 {
@@ -16,12 +16,12 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
-	attrib_t attrib;
-	std::vector<shape_t> shapes;
+	std::string filename = argv[1];
 
-	if (!LoadObj(&attrib, &shapes, nullptr, nullptr, nullptr, argv[1]))
+	Loader objLoader;
+	if (!objLoader.LoadFile(filename))
 	{
-		std::cout << "Failed to parse obj!" << std::endl;
+		std::cout << "Failed to open obj!" << std::endl;
 		std::cin.get();
 		return 0;
 	}
@@ -30,51 +30,46 @@ int main(int argc, char* argv[])
 	std::vector<FileMeshVertexNormalTexture3d> vnts;
 	std::vector<FileMeshFace> faces;
 
-	for (size_t i = 0; i < shapes.size(); ++i)
+	for (size_t i = 0; i < objLoader.LoadedMeshes.size(); ++i)
 	{
-		size_t offset = 0;
+		Mesh currentMesh = objLoader.LoadedMeshes[i];
 
-		for (size_t j = 0; j < shapes[i].mesh.num_face_vertices.size(); ++j)
+		for (size_t j = 0; j < currentMesh.Vertices.size(); ++j)
 		{
-			uint8_t faceVertices = shapes[i].mesh.num_face_vertices[j];
+			Vertex vertex = currentMesh.Vertices[j];
 
-			for (size_t k = 0; k < faceVertices; ++k)
-			{
-				index_t indices = shapes[i].mesh.indices[offset + k];
+			FileMeshVertexNormalTexture3d vnt;
+			
+			vnt.vx = vertex.Position.X;
+			vnt.vy = vertex.Position.Y;
+			vnt.vz = vertex.Position.Z;
 
-				FileMeshVertexNormalTexture3d vnt;
-				vnt.vx = attrib.vertices[3 * indices.vertex_index + 0];
-				vnt.vy = attrib.vertices[3 * indices.vertex_index + 1];
-				vnt.vz = attrib.vertices[3 * indices.vertex_index + 2];
-				vnt.nx = attrib.normals[3 * indices.normal_index + 0];
-				vnt.ny = attrib.normals[3 * indices.normal_index + 1];
-				vnt.nz = attrib.normals[3 * indices.normal_index + 2];
-				vnt.tu = 0;
-				vnt.tv = 0;
-				vnt.tw = 0;
+			vnt.nx = vertex.Normal.X;
+			vnt.ny = vertex.Normal.Y;
+			vnt.nz = vertex.Normal.Z;
 
-				if (attrib.texcoords.size() != 0)
-				{
-					vnt.tu = attrib.texcoords[2 * indices.texcoord_index + 0];
-					vnt.tv = 1 - attrib.texcoords[2 * indices.texcoord_index + 1];
-				}
+			vnt.tu = vertex.TextureCoordinate.X;
+			vnt.tv = 1 - vertex.TextureCoordinate.Y;
 
-				vnts.push_back(vnt);
-			}
+			vnts.push_back(vnt);
+		}
+
+		for (size_t k = 0; k < currentMesh.Indices.size(); k += 3)
+		{
 			FileMeshFace face;
-			face.a = 3 * j + 0;
-			face.b = 3 * j + 1;
-			face.c = 3 * j + 2;
-			faces.push_back(face);
 
-			offset += faceVertices;
+			face.a = currentMesh.Indices[k];
+			face.b = currentMesh.Indices[k + 1];
+			face.c = currentMesh.Indices[k + 2];
+
+			faces.push_back(face);
 		}
 	}
 
 	meshData.vnts = vnts;
 	meshData.faces = faces;
 
-	std::ofstream result(std::string(argv[1]) + ".mesh", std::ios::binary);
+	std::ofstream result(filename + ".mesh", std::ios::binary);
 	writeFileMesh(result, meshData);
 	result.close();
 }

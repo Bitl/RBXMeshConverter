@@ -169,8 +169,8 @@
   <ItemGroup>
     <ClInclude Include="FileMeshData.h" />
     <ClInclude Include="MeshFileStructs.h" />
+    <ClInclude Include="OBJ_Loader.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RBXMeshConverter.rc" />
