@@ -17,7 +17,7 @@ namespace RBX
 		float vx, vy, vz;
 		float nx, ny, nz;
 		float tu, tv, tw;
-		char r, g, b, a;
+		// char r, g, b, a;
 	};
 
 	struct FileMeshFace
